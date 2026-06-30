@@ -1,0 +1,1338 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>班主任评语助手 v2</title>
+  <script src="assets/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7f3;
+      --panel: #ffffff;
+      --ink: #17201b;
+      --muted: #647067;
+      --line: #dce3dc;
+      --green: #2f6f52;
+      --teal: #22757d;
+      --amber: #b87324;
+      --rose: #b8586a;
+      --blue: #365f91;
+      --lav: #7462a8;
+      --soft: #edf4ef;
+      --shadow: 0 18px 54px rgba(25, 40, 32, .11);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(47, 111, 82, .12), transparent 28rem),
+        linear-gradient(305deg, rgba(184, 115, 36, .10), transparent 32rem),
+        var(--bg);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+    }
+
+    button, input, textarea, select { font: inherit; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
+    }
+
+    aside {
+      height: 100vh;
+      overflow: auto;
+      padding: 22px;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, .90);
+      backdrop-filter: blur(14px);
+    }
+
+    main {
+      height: 100vh;
+      overflow: auto;
+      padding: 28px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    .brand {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .mark {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--green), var(--teal));
+      font-size: 23px;
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 24px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .section {
+      padding: 18px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section:first-of-type { border-top: 0; }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      color: #334239;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input[type="text"], select, textarea {
+      width: 100%;
+      border: 1px solid #cfd9d1;
+      border-radius: 8px;
+      background: #fbfdfb;
+      color: var(--ink);
+      padding: 10px 11px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 82px;
+      resize: vertical;
+      line-height: 1.65;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(34, 117, 125, .13);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      border: 1px dashed #b8c8bd;
+      border-radius: 8px;
+      background: #fbfdfb;
+      padding: 10px;
+      color: var(--muted);
+    }
+
+    .chip input {
+      width: 15px;
+      height: 15px;
+      margin: 0 6px 0 0;
+      accent-color: var(--green);
+    }
+
+    .chip span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 10px;
+      border: 1px solid #d8dfd8;
+      border-radius: 8px;
+      background: #fff;
+      color: #334239;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .chip input:checked + span {
+      border-color: var(--green);
+      background: var(--soft);
+      color: #17472f;
+      font-weight: 800;
+    }
+
+    .dimension {
+      margin-bottom: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .dimension-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      background: #f7faf7;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dimension-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .options {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+    }
+
+    .check-row {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 7px;
+      border-radius: 7px;
+    }
+
+    .check-row:hover { background: #f7faf7; }
+
+    .check-row input { margin-top: 3px; }
+
+    .check-row span {
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .actions {
+      position: sticky;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 14px 0 0;
+      background: linear-gradient(transparent, rgba(255,255,255,.96) 24%);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 14px;
+      cursor: pointer;
+      font-weight: 900;
+      color: #fff;
+      background: var(--green);
+      box-shadow: 0 10px 24px rgba(47, 111, 82, .20);
+    }
+
+    .btn.secondary {
+      color: #234036;
+      background: #e7eee8;
+      box-shadow: none;
+    }
+
+    .btn.ghost {
+      color: #214a54;
+      background: #e8f1f2;
+      box-shadow: none;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 22px;
+    }
+
+    .hero h2 {
+      margin: 0 0 8px;
+      font-size: clamp(26px, 3vw, 40px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(110px, 1fr));
+      gap: 10px;
+      min-width: 360px;
+    }
+
+    .stat {
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.76);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.86);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdfb;
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      font-size: 16px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .panel-body { padding: 18px; }
+
+    .output {
+      min-height: 235px;
+      margin: 0;
+      white-space: pre-wrap;
+      line-height: 1.85;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .output.empty {
+      color: #7b867d;
+      font-size: 15px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .mini-btn {
+      border: 1px solid #ccd8d0;
+      border-radius: 8px;
+      background: #fff;
+      color: #244236;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .mini-btn:hover { background: #f2f7f3; }
+
+    .source-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .source-item {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .source-item b {
+      display: block;
+      margin-bottom: 5px;
+      color: #223a31;
+      font-size: 13px;
+    }
+
+    .source-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .pill {
+      border-radius: 8px;
+      padding: 5px 8px;
+      color: #264237;
+      background: #edf4ef;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .roster-list {
+      max-height: 170px;
+      overflow: auto;
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .student-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .student-row.active {
+      border-color: var(--green);
+      background: var(--soft);
+      font-weight: 900;
+    }
+
+    .student-row small {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      transform: translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s ease;
+      padding: 10px 13px;
+      border-radius: 8px;
+      color: #fff;
+      background: #17201b;
+      box-shadow: var(--shadow);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      aside, main { height: auto; overflow: visible; }
+      aside { border-right: 0; border-bottom: 1px solid var(--line); }
+      .hero, .workspace { grid-template-columns: 1fr; }
+      .stats { min-width: 0; }
+    }
+
+    @media (max-width: 1180px) {
+      .workspace { grid-template-columns: 1fr; }
+      .panel-head { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 560px) {
+      aside, main { padding: 16px; }
+      .grid-2, .stats, .actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand">
+        <div class="mark">评</div>
+        <div>
+          <h1>班主任评语助手 v2</h1>
+          <p class="sub">接入AI 提示词优化，支持性别、学段、性格画像、问题类型和五育融合筛选。</p>
+        </div>
+      </div>
+
+      <section class="section">
+        <div class="section-title">花名册导入 <span class="hint">支持 .xlsx / .xls</span></div>
+        <div class="field">
+          <label for="rosterFile">学生花名册</label>
+          <input id="rosterFile" type="file" accept=".xlsx,.xls" />
+        </div>
+        <div class="grid-2">
+          <button class="btn ghost" id="importRosterBtn" type="button">导入花名册</button>
+          <button class="btn secondary" id="saveCommentBtn" type="button">保存当前评语</button>
+        </div>
+        <p class="hint" id="rosterStatus">未导入花名册。支持常规表头和左右两栏点名册，建议包含：姓名、性别、班级/年级。</p>
+        <div class="field">
+          <label for="studentPicker">选择学生</label>
+          <select id="studentPicker">
+            <option value="">请先导入或手动填写</option>
+          </select>
+        </div>
+        <div class="roster-list" id="rosterList"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">学生信息 <span class="hint">可留空</span></div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="studentName">学生姓名</label>
+            <input id="studentName" type="text" placeholder="如：小宇" />
+          </div>
+          <div class="field">
+            <label for="pronoun">称呼方式</label>
+            <select id="pronoun">
+              <option value="你">你</option>
+              <option value="他">他</option>
+              <option value="她">她</option>
+              <option value="孩子">这个孩子</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="gender">性别</label>
+            <select id="gender">
+              <option value="">不限定</option>
+              <option>男孩</option>
+              <option>女孩</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="grade">学段</label>
+            <select id="grade">
+              <option>小学低段</option>
+              <option selected>小学中高段</option>
+              <option>初中</option>
+              <option>高中</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="tone">语气风格</label>
+          <select id="tone">
+            <option value="温暖具体" selected>温暖具体</option>
+            <option value="诗意治愈">诗意治愈</option>
+            <option value="理性诊断">理性诊断</option>
+            <option value="活泼鼓励">活泼鼓励</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="notes">老师补充观察</label>
+          <textarea id="notes" placeholder="如：本学期担任小组长，课堂表达更主动，但作业订正还需要更及时。"></textarea>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">成长基调</div>
+        <div class="chips" id="growthChips"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">性格画像 <span class="hint">可多选</span></div>
+        <div class="chips" id="personalityChips"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">问题类型 <span class="hint">用于生成建议</span></div>
+        <div class="chips" id="problemChips"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">五育表现菜单 <span class="hint">建议勾选 4-8 项</span></div>
+        <div id="dimensionMenus"></div>
+      </section>
+
+      <div class="actions">
+        <button class="btn" id="generateBtn">生成评语</button>
+        <button class="btn secondary" id="clearBtn">清空选择</button>
+      </div>
+    </aside>
+
+    <main>
+      <div class="hero">
+        <div>
+          <h2>把学生画像、五育表现和AI 提示词优化整合成一段可直接使用的期末评语。</h2>
+          <p class="sub">第二版新增真实 AI 接口、性别/学段/性格/问题筛选，以及图片型资料 OCR 扩充语料入口。</p>
+        </div>
+        <div class="stats">
+          <div class="stat"><strong id="corpusCount">110</strong><span>条语料可继续扩充</span></div>
+          <div class="stat"><strong>5</strong><span>个学生发展维度</span></div>
+          <div class="stat"><strong id="aiStatus">检测中</strong><span>AI 接口状态</span></div>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>生成结果</h3>
+            <div class="toolbar">
+              <button class="mini-btn" id="copyBtn">复制评语</button>
+              <button class="mini-btn" id="aiGenerateBtn">AI生成</button>
+              <button class="mini-btn" id="optimizeBtn">AI优化</button>
+              <button class="mini-btn" id="shortenBtn">压缩成短评</button>
+              <button class="mini-btn" id="ocrBtn">OCR扩充</button>
+              <button class="mini-btn" id="promptBtn">复制AI提示词</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <p class="output empty" id="output">请先在左侧填写学生信息并勾选五育表现，然后点击“生成评语”。</p>
+            <div class="pill-row" id="outputTags"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>整合说明</h3>
+          </div>
+          <div class="panel-body">
+            <div class="source-list">
+              <div class="source-item">
+                <b>资料筛选</b>
+                <p>已从你提供的 Word、PPT、PDF 资料中抽取可读文本，去除明显宣传、版权和碎片内容，保留适合迁移到评语生成器的表达方向。</p>
+              </div>
+              <div class="source-item">
+                <b>五育框架</b>
+                <p>菜单按学生发展质量的五个方面组织：品德发展、学业发展、身心发展、审美素养、劳动与社会实践。</p>
+              </div>
+              <div class="source-item">
+                <b>AI 提示词优化</b>
+                <p>公开版不保存也不上传 API Key；可先本地生成，再复制 AI 提示词到你常用的大模型中优化。</p>
+              </div>
+              <div class="source-item">
+                <b>OCR 扩充语料</b>
+                <p>公开版不执行 OCR；如需继续扩充图文语料，请使用本地版工具。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast">已复制</div>
+
+  <script>
+    const API_BASE = location.origin;
+    const PUBLIC_STATIC_MODE = true;
+
+    const growthModes = [
+      "进步明显", "稳定优秀", "潜力待释放", "需要更自律", "表达更主动", "基础需巩固", "习惯在养成", "个性有亮点"
+    ];
+
+    const personalityModes = [
+      "安静细腻", "阳光外向", "认真踏实", "思维活跃", "慢热敏感", "组织力强", "创意丰富", "需要鼓励"
+    ];
+
+    const problemModes = [
+      "作业拖延", "订正不及时", "课堂不够专注", "表达不够主动", "基础薄弱", "情绪起伏", "合作意识待加强", "劳动习惯不稳定"
+    ];
+
+    const dimensions = [
+      {
+        id: "moral",
+        name: "德育品格",
+        color: "#2f6f52",
+        focus: "品德发展",
+        items: [
+          ["待人真诚，能尊重同学和老师", "你待人真诚，懂得尊重他人，班级生活中常能给人踏实可靠的感觉。"],
+          ["有责任感，愿意承担班级事务", "你有责任感，愿意为班级事务出一份力，这份担当是很可贵的成长底色。"],
+          ["遵守规则，集体意识较强", "你能遵守班级规则，也能把自己放在集体之中思考，集体意识在慢慢增强。"],
+          ["能主动关心同伴，乐于帮助别人", "你愿意关心同伴、帮助别人，这份善意让班级多了一点温暖。"],
+          ["情绪管理还需练习", "遇到不顺心的事情时，可以再多一点停顿和沟通，把情绪转化为解决问题的力量。"],
+          ["自我要求可以再提高", "如果能把对自己的要求再提高一点，你会在细节处呈现出更稳定的成长。"]
+        ]
+      },
+      {
+        id: "academic",
+        name: "智育学业",
+        color: "#365f91",
+        focus: "学业发展",
+        items: [
+          ["课堂专注，能跟上学习节奏", "你课堂上能保持较好的专注度，学习节奏越来越稳。"],
+          ["思考积极，愿意表达观点", "你愿意思考，也开始更主动地表达自己的观点，这是学习走向深入的重要一步。"],
+          ["阅读积累较好，表达有亮点", "你的阅读积累正在转化为表达能力，文字和发言中都能看到自己的想法。"],
+          ["作业认真，订正意识增强", "你对待作业比较认真，订正意识也在增强，说明你正在学会为学习结果负责。"],
+          ["基础知识需要继续夯实", "基础知识还需要继续夯实，尤其要把易错点整理清楚，做到当天问题当天消化。"],
+          ["学习方法需要更主动", "接下来要更主动地总结方法，学会预习、提问、复盘，让努力更有方向。"]
+        ]
+      },
+      {
+        id: "health",
+        name: "体育健康",
+        color: "#22757d",
+        focus: "身心发展",
+        items: [
+          ["阳光开朗，能积极参与活动", "你阳光开朗，愿意参与班级和体育活动，身上有让人喜欢的活力。"],
+          ["能坚持锻炼，精神状态更饱满", "你能坚持锻炼，精神状态也更饱满，好的体魄正在支持更好的学习。"],
+          ["遇到困难不轻易放弃", "遇到困难时你不轻易放弃，这份坚持会成为你继续向前的重要力量。"],
+          ["合作意识好，能遵守活动规则", "在活动中你能遵守规则，也能与伙伴配合，合作意识越来越清楚。"],
+          ["抗挫能力还可加强", "面对挫折时，可以再勇敢一点，把一次失误看成下一次改进的入口。"],
+          ["作息和精力管理需要关注", "还要继续关注作息和精力管理，让每天的学习、运动和休息形成更好的节奏。"]
+        ]
+      },
+      {
+        id: "aesthetic",
+        name: "美育审美",
+        color: "#b8586a",
+        focus: "审美素养",
+        items: [
+          ["能发现生活中的美和细节", "你善于发现生活中的美和细节，这让你的观察更细腻，表达也更有温度。"],
+          ["想象力丰富，作品有个人特点", "你的想象力很有特点，作品中常能看到属于自己的表达。"],
+          ["喜欢阅读、音乐、绘画或创作", "你对阅读、音乐、绘画或创作保持兴趣，这些积累会慢慢滋养你的心灵。"],
+          ["表达温柔，有感染力", "你的表达有温柔的一面，也能把自己的感受传递给别人。"],
+          ["作品完成度还可提高", "如果能在作品完成度上再多一点耐心，你的美感和创造力会被更多人看见。"],
+          ["需要更大胆展示自己", "可以更大胆地展示自己，让自己的审美判断和创造想法走到大家面前。"]
+        ]
+      },
+      {
+        id: "labor",
+        name: "劳育实践",
+        color: "#b87324",
+        focus: "劳动与社会实践",
+        items: [
+          ["值日认真，能做好身边小事", "你能认真完成值日和身边小事，说明你正在把责任落实到行动里。"],
+          ["动手能力较强，愿意尝试解决问题", "你愿意动手尝试，也能在实践中寻找解决问题的办法。"],
+          ["服务意识好，能参与班级劳动", "你有服务意识，能参与班级劳动，为共同环境贡献力量。"],
+          ["生活自理能力在提升", "你的生活自理能力在提升，越来越能把自己的事情安排好。"],
+          ["劳动习惯还需稳定", "劳动习惯还需要更稳定一些，把每一次参与都当成锻炼责任感的机会。"],
+          ["实践后要学会总结", "实践之后可以多做一点总结，把动手经历转化为经验和能力。"]
+        ]
+      }
+    ];
+
+    const openings = {
+      "温暖具体": ["这一学期，{name}{pronounText}的成长是看得见的。", "{name}{pronounText}给老师留下的印象，是踏实中带着自己的亮光。"],
+      "诗意治愈": ["这一学期，{name}{pronounText}像一棵慢慢舒展枝叶的小树，在自己的节奏里向上生长。", "{name}{pronounText}身上有一种安静的光，越靠近越能看见成长的纹理。"],
+      "理性诊断": ["从本学期表现看，{name}{pronounText}整体状态稳中有进，优势和改进方向都比较清晰。", "{name}{pronounText}本学期在多个方面都有积累，也暴露出需要继续调整的学习和习惯问题。"],
+      "活泼鼓励": ["这一学期，{name}{pronounText}带着自己的节奏一路向前，进步值得被认真看见。", "{name}{pronounText}就像一匹正在蓄力的小马，已经跑出了属于自己的成长轨迹。"]
+    };
+
+    const endings = {
+      "温暖具体": "愿你带着这份认真和勇气继续向前，把每一天的小进步都变成更好的自己。",
+      "诗意治愈": "愿你继续向阳生长，在新的学期里把心里的光变成脚下更坚定的路。",
+      "理性诊断": "希望你下学期继续保持优势，聚焦关键问题，用更稳定的行动换来更扎实的成长。",
+      "活泼鼓励": "新的学期，继续加油，把目标拆成每天的小行动，你一定还能带来新的惊喜。"
+    };
+
+    const refs = {
+      "德育品格": "自律、真诚、责任、尊重、集体意识",
+      "智育学业": "专注、思考、阅读、表达、方法、订正",
+      "体育健康": "阳光、坚持、合作、抗挫、身心节奏",
+      "美育审美": "观察、想象、表达、创造、展示",
+      "劳育实践": "值日、动手、服务、自理、实践总结"
+    };
+
+    const $ = (id) => document.getElementById(id);
+    let rosterStudents = [];
+    let activeStudentId = "";
+    let savedComments = JSON.parse(localStorage.getItem("classTeacherCommentsV2") || "{}");
+
+    function init() {
+      $("growthChips").innerHTML = renderChips("growth", growthModes, 0);
+      $("personalityChips").innerHTML = renderChips("personality", personalityModes);
+      $("problemChips").innerHTML = renderChips("problem", problemModes);
+
+      $("dimensionMenus").innerHTML = dimensions.map(dim => `
+        <div class="dimension">
+          <div class="dimension-head">
+            <div class="dimension-name"><i class="dot" style="background:${dim.color}"></i>${dim.name}</div>
+            <div class="count">${dim.focus}</div>
+          </div>
+          <div class="options">
+            ${dim.items.map((item, idx) => `
+              <label class="check-row">
+                <input type="checkbox" name="${dim.id}" value="${idx}">
+                <span>${item[0]}</span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+      `).join("");
+
+      $("generateBtn").addEventListener("click", generate);
+      $("clearBtn").addEventListener("click", clearAll);
+      $("copyBtn").addEventListener("click", () => copyText(getOutputText()));
+      $("aiGenerateBtn").addEventListener("click", aiGenerate);
+      $("optimizeBtn").addEventListener("click", optimize);
+      $("shortenBtn").addEventListener("click", shorten);
+      $("ocrBtn").addEventListener("click", runOcr);
+      $("promptBtn").addEventListener("click", copyPrompt);
+      $("importRosterBtn").addEventListener("click", importRoster);
+      $("studentPicker").addEventListener("change", () => selectStudent($("studentPicker").value));
+      $("saveCommentBtn").addEventListener("click", saveCurrentComment);
+      refreshStatus();
+      renderSavedSummary();
+    }
+
+    function renderChips(name, list, checkedIndex = -1) {
+      return list.map((mode, idx) => `
+        <label class="chip">
+          <input type="checkbox" name="${name}" value="${mode}" aria-label="${mode}" ${idx === checkedIndex ? "checked" : ""}>
+          <span>${mode}</span>
+        </label>
+      `).join("");
+    }
+
+    function selectedGrowth() {
+      return [...document.querySelectorAll("input[name='growth']:checked")].map(el => el.value);
+    }
+
+    function selectedPersonalities() {
+      return [...document.querySelectorAll("input[name='personality']:checked")].map(el => el.value);
+    }
+
+    function selectedProblems() {
+      return [...document.querySelectorAll("input[name='problem']:checked")].map(el => el.value);
+    }
+
+    function selectedItems() {
+      const result = [];
+      dimensions.forEach(dim => {
+        [...document.querySelectorAll(`input[name='${dim.id}']:checked`)].forEach(el => {
+          const item = dim.items[Number(el.value)];
+          result.push({ dimension: dim.name, focus: dim.focus, label: item[0], sentence: item[1] });
+        });
+      });
+      return result;
+    }
+
+    function profile() {
+      const rawName = $("studentName").value.trim();
+      const pronoun = $("pronoun").value;
+      const name = rawName || "这位同学";
+      const pronounText = rawName ? "" : "";
+      return {
+        rawName,
+        name,
+        pronoun,
+        pronounText,
+        gender: $("gender").value,
+        grade: $("grade").value,
+        tone: $("tone").value,
+        personalities: selectedPersonalities(),
+        problems: selectedProblems(),
+        notes: $("notes").value.trim()
+      };
+    }
+
+    async function importRoster() {
+      const file = $("rosterFile").files[0];
+      if (!file) {
+        showToast("请先选择 xlsx 或 xls 花名册");
+        return;
+      }
+      try {
+        if (!window.XLSX) throw new Error("表格解析库未加载");
+        showToast("正在导入花名册");
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+        rosterStudents = parseRosterRows(rows);
+        activeStudentId = "";
+        renderRoster();
+        $("rosterStatus").textContent = `已导入 ${rosterStudents.length} 名学生：${file.name}`;
+        showToast(`已导入 ${rosterStudents.length} 名学生`);
+      } catch (error) {
+        $("rosterStatus").textContent = `导入失败：${error.message}`;
+        showToast("花名册导入失败");
+      }
+    }
+
+    function parseRosterRows(rows) {
+      const repeated = parseRepeatedNameGroups(rows);
+      if (repeated.length) return repeated;
+      return parseSingleHeaderRoster(rows);
+    }
+
+    function textCell(value) {
+      return value == null ? "" : String(value).trim();
+    }
+
+    function likelyName(value) {
+      const text = textCell(value);
+      if (!text || ["姓名", "学生姓名", "名字"].includes(text)) return false;
+      if (/\d|班|级|序号|性别|男$|女$/.test(text)) return false;
+      return /^[\u4e00-\u9fff·]{2,8}$/.test(text);
+    }
+
+    function detectClassAndGrade(rows) {
+      const text = rows.slice(0, 6).flat().map(textCell).join(" ");
+      const match = text.match(/([七八九一二三四五六789][（(]?\d+[）)]?\s*班|[七八九一二三四五六789]年级\s*\d+\s*班)/);
+      const className = match ? match[1].replace(/\s+/g, "") : "";
+      return { className, grade: normalizeGrade(className || text) };
+    }
+
+    function parseRepeatedNameGroups(rows) {
+      const { className, grade } = detectClassAndGrade(rows);
+      const students = [];
+      rows.slice(0, 12).forEach((rawHeader, headerIdx) => {
+        const header = rawHeader.map(textCell);
+        const nameCols = header.map((v, i) => ["姓名", "学生姓名", "名字"].includes(v) ? i : -1).filter(i => i >= 0);
+        nameCols.forEach(nameCol => {
+          let genderCol = -1;
+          let seqCol = -1;
+          for (let c = nameCol + 1; c < Math.min(nameCol + 4, header.length); c++) {
+            if (header[c].includes("性别")) genderCol = c;
+          }
+          for (let c = Math.max(0, nameCol - 3); c < nameCol; c++) {
+            if (header[c].includes("序号") || header[c].includes("编号")) seqCol = c;
+          }
+          rows.slice(headerIdx + 1).forEach(row => {
+            const name = textCell(row[nameCol]);
+            if (!likelyName(name)) return;
+            const genderRaw = genderCol >= 0 ? textCell(row[genderCol]) : "";
+            const number = seqCol >= 0 ? textCell(row[seqCol]) : "";
+            students.push({
+              id: `s${students.length + 1}`,
+              name,
+              gender: normalizeGender(genderRaw),
+              grade,
+              className,
+              notes: "",
+              number,
+              raw: { "序号": number, "姓名": name, "性别": genderRaw, "班级": className }
+            });
+          });
+        });
+      });
+      const seen = new Set();
+      return students.filter(student => {
+        const key = `${student.name}|${student.number}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        student.id = `s${seen.size}`;
+        return true;
+      });
+    }
+
+    function parseSingleHeaderRoster(rows) {
+      let headerIdx = 0;
+      for (let i = 0; i < Math.min(rows.length, 8); i++) {
+        const cells = rows[i].map(textCell);
+        if (cells.some(cell => /姓名|学生|性别|班级|年级/.test(cell))) {
+          headerIdx = i;
+          break;
+        }
+      }
+      const headers = rows[headerIdx].map((v, i) => textCell(v) || `列${i + 1}`);
+      const students = [];
+      rows.slice(headerIdx + 1).forEach(raw => {
+        const row = {};
+        raw.forEach((value, i) => row[headers[i] || `列${i + 1}`] = textCell(value));
+        const name = pickRowValue(row, ["学生姓名", "姓名", "名字", "学生"]);
+        if (!likelyName(name)) return;
+        const gender = pickRowValue(row, ["性别", "男女"]);
+        const gradeText = pickRowValue(row, ["学段", "年级", "班级"]);
+        const className = pickRowValue(row, ["班级"]);
+        students.push({
+          id: `s${students.length + 1}`,
+          name,
+          gender: normalizeGender(gender),
+          grade: normalizeGrade(gradeText),
+          className,
+          notes: pickRowValue(row, ["备注", "观察", "特点", "评语", "表现", "问题"]),
+          raw: row
+        });
+      });
+      return students;
+    }
+
+    function pickRowValue(row, names) {
+      for (const name of names) {
+        for (const [key, value] of Object.entries(row)) {
+          if (key.includes(name) && value) return value;
+        }
+      }
+      return "";
+    }
+
+    function normalizeGender(value) {
+      if (String(value).includes("男")) return "男孩";
+      if (String(value).includes("女")) return "女孩";
+      return "";
+    }
+
+    function normalizeGrade(value) {
+      const text = String(value || "");
+      if (/高一|高二|高三|高中/.test(text)) return "高中";
+      if (/初一|初二|初三|初中|七|八|九|7|8|9/.test(text)) return "初中";
+      if (/五年级|六年级|三年级|四年级|五|六|三|四|高段|[3-6]\s*年级/.test(text)) return "小学中高段";
+      if (/一年级|二年级|一|二|低|[1-2]\s*年级/.test(text)) return "小学低段";
+      return ["小学低段", "小学中高段", "初中", "高中"].includes(text) ? text : "";
+    }
+
+    function renderRoster() {
+      $("studentPicker").innerHTML = `<option value="">选择学生</option>` + rosterStudents.map(s => {
+        const extra = [s.gender, s.grade, s.className].filter(Boolean).join(" / ");
+        return `<option value="${s.id}">${s.name}${extra ? " - " + extra : ""}</option>`;
+      }).join("");
+      $("rosterList").innerHTML = rosterStudents.slice(0, 80).map(s => {
+        const saved = savedComments[s.id] ? "已保存" : "";
+        const extra = [s.gender, s.grade, s.className].filter(Boolean).join(" / ");
+        return `<button class="student-row ${s.id === activeStudentId ? "active" : ""}" type="button" data-id="${s.id}">
+          <span>${s.name}<br><small>${extra || "未识别年级/性别"}</small></span>
+          <small>${saved}</small>
+        </button>`;
+      }).join("");
+      document.querySelectorAll(".student-row").forEach(btn => {
+        btn.addEventListener("click", () => selectStudent(btn.dataset.id));
+      });
+    }
+
+    function selectStudent(id) {
+      const s = rosterStudents.find(item => item.id === id);
+      if (!s) return;
+      activeStudentId = id;
+      $("studentPicker").value = id;
+      $("studentName").value = s.name || "";
+      if (s.gender) $("gender").value = s.gender;
+      if (s.grade && [...$("grade").options].some(o => o.value === s.grade || o.textContent === s.grade)) $("grade").value = s.grade;
+      if (s.notes && !$("notes").value.trim()) $("notes").value = s.notes;
+      if (savedComments[id]) {
+        setOutput(savedComments[id].comment, selectedItems(), selectedGrowth(), true);
+      }
+      renderRoster();
+      showToast(`已切换到：${s.name}`);
+    }
+
+    function saveCurrentComment() {
+      const text = getOutputText();
+      if (!text) {
+        showToast("请先生成评语");
+        return;
+      }
+      const p = profile();
+      const id = activeStudentId || `manual-${p.rawName || Date.now()}`;
+      savedComments[id] = {
+        id,
+        name: p.rawName || "未命名学生",
+        gender: p.gender,
+        grade: p.grade,
+        comment: text,
+        updatedAt: new Date().toLocaleString(),
+      };
+      localStorage.setItem("classTeacherCommentsV2", JSON.stringify(savedComments));
+      renderRoster();
+      renderSavedSummary();
+      showToast("已保存当前评语");
+    }
+
+    function renderSavedSummary() {
+      const count = Object.keys(savedComments).length;
+      const current = $("rosterStatus").textContent;
+      if (!current.includes("已导入")) {
+        $("rosterStatus").textContent = count ? `未导入花名册。当前本机已保存 ${count} 条评语。` : "未导入花名册。建议表头包含：姓名、性别、班级/年级、备注。";
+      }
+    }
+
+    function formatTemplate(text, p) {
+      return text
+        .replaceAll("{name}", p.name)
+        .replaceAll("{pronoun}", p.pronoun)
+        .replaceAll("{pronounText}", p.pronounText);
+    }
+
+    function generate() {
+      const p = profile();
+      const items = selectedItems();
+      const growth = selectedGrowth();
+      if (!items.length && !p.notes) {
+        showToast("请至少勾选一项表现或填写观察");
+        return;
+      }
+
+      const grouped = groupBy(items, "dimension");
+      const openingPool = openings[p.tone] || openings["温暖具体"];
+      const opening = formatTemplate(openingPool[Math.floor(Math.random() * openingPool.length)], p);
+      const body = [];
+
+      Object.keys(grouped).forEach(key => {
+        const picked = grouped[key].slice(0, 3).map(x => x.sentence);
+        body.push(picked.join(""));
+      });
+
+      if (p.notes) {
+        body.push(`老师也特别留意到：${p.notes.replace(/[。；;]*$/, "。")}`);
+      }
+
+      const growthLine = growth.length
+        ? `综合来看，${p.pronoun}的成长关键词可以概括为“${growth.slice(0, 3).join("、")}”。`
+        : "";
+      const profileLine = buildProfileLine(p);
+      if (profileLine) body.unshift(profileLine);
+      const suggestion = buildSuggestion(items, p);
+      const ending = endings[p.tone] || endings["温暖具体"];
+      const text = [opening, ...body, growthLine, suggestion, ending].filter(Boolean).join("");
+
+      setOutput(text, items, growth, false);
+    }
+
+    function buildProfileLine(p) {
+      const parts = [];
+      if (p.gender) parts.push(p.gender);
+      if (p.personalities.length) parts.push(p.personalities.slice(0, 2).join("、"));
+      if (!parts.length) return "";
+      return `从学生画像看，${p.pronoun}是一个${parts.join("，")}的孩子，这也让${p.pronoun}的成长呈现出比较鲜明的个人特点。`;
+    }
+
+    function buildSuggestion(items, p) {
+      const labels = items.map(x => x.label).join(" ") + " " + p.problems.join(" ");
+      const needs = [];
+      if (/基础|方法|订正|作业|专注|拖延/.test(labels)) needs.push("把易错点、订正和复盘做得更及时");
+      if (/情绪|抗挫|困难|作息|起伏/.test(labels)) needs.push("学会管理情绪和时间节奏");
+      if (/展示|表达|主动/.test(labels)) needs.push("更大胆地表达和展示自己");
+      if (/劳动|实践|总结|习惯/.test(labels)) needs.push("把实践后的经验及时总结下来");
+      if (/合作/.test(labels)) needs.push("在小组合作中多倾听、多协商");
+      if (!needs.length) needs.push("在已有优势上继续坚持，把好习惯落实到每天");
+      return `接下来，建议${p.pronoun}${needs.slice(0, 2).join("，并且")}。`;
+    }
+
+    async function aiGenerate() {
+      generate();
+      showToast("公开版已用本地规则生成；需要真AI时请复制AI提示词");
+    }
+
+    async function optimize() {
+      localOptimize();
+    }
+
+    function localOptimize() {
+      const current = getOutputText();
+      if (!current) {
+        generate();
+        return;
+      }
+      const p = profile();
+      const items = selectedItems();
+      const dims = [...new Set(items.map(x => x.dimension))];
+      const missing = dimensions.map(d => d.name).filter(name => !dims.includes(name));
+      let text = current;
+      text = text.replace(/很好|不错|棒/g, "表现稳定").replace(/加油！?/g, "继续把目标落实到每天的具体行动中。").replace(/你你/g, "你").replace(/。。+/g, "。");
+      if (missing.length && items.length) {
+        const bridge = `同时，也期待${p.pronoun}在${missing.slice(0, 2).join("、")}方面继续打开新的成长空间。`;
+        text = text.replace(/愿你|希望你|新的学期/, `${bridge}愿你`);
+      }
+      if (!/具体行动|复盘|总结|目标/.test(text)) text += `下学期可以给自己设定一个小目标，每周复盘一次，把努力变成看得见的改变。`;
+      setOutput(text, items, selectedGrowth(), true);
+      showToast("真实AI不可用，已用本地规则优化");
+    }
+
+    function shorten() {
+      const text = getOutputText();
+      if (!text) {
+        showToast("请先生成评语");
+        return;
+      }
+      const sentences = text.match(/[^。！？]+[。！？]/g) || [text];
+      const p = profile();
+      const shortText = sentences.slice(0, 2).join("") + `愿${p.pronoun}继续保持优势，补齐短板，在新的学期收获更稳的成长。`;
+      setOutput(shortText, selectedItems(), selectedGrowth(), true);
+    }
+
+    function copyPrompt() {
+      const p = profile();
+      const items = selectedItems();
+      const prompt = `请你扮演经验丰富、表达温暖而具体的班主任，基于以下信息优化一段期末学生评语。
+
+要求：
+1. 符合五育融合理念，覆盖品德发展、学业发展、身心发展、审美素养、劳动与社会实践中已提供的信息。
+2. 不要空泛夸奖，要写出具体表现、成长变化、下一步建议。
+3. 语气自然、真诚、适合写进学生成长手册。
+4. 字数控制在180-260字。
+
+学生信息：
+姓名：${p.rawName || "未填写"}
+学段：${p.grade}
+性别：${p.gender || "未选择"}
+称呼：${p.pronoun}
+语气：${p.tone}
+性格画像：${p.personalities.join("、") || "未选择"}
+问题类型：${p.problems.join("、") || "未选择"}
+成长基调：${selectedGrowth().join("、") || "未选择"}
+已勾选表现：${items.map(x => `【${x.dimension}】${x.label}`).join("；") || "未勾选"}
+老师补充观察：${p.notes || "无"}
+
+当前评语：
+${getOutputText() || "暂无，请根据以上信息直接生成。"}`;
+      copyText(prompt);
+    }
+
+    function payloadForAI() {
+      const p = profile();
+      return {
+        studentName: p.rawName,
+        pronoun: p.pronoun,
+        gender: p.gender,
+        grade: p.grade,
+        tone: p.tone,
+        personalities: p.personalities,
+        problems: p.problems,
+        growth: selectedGrowth(),
+        notes: p.notes,
+        items: selectedItems().map(x => ({ dimension: x.dimension, focus: x.focus, label: x.label, sentence: x.sentence })),
+        comment: getOutputText()
+      };
+    }
+
+    async function postJSON(path, payload) {
+      const res = await fetch(API_BASE + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      return data;
+    }
+
+    async function refreshStatus() {
+      $("aiStatus").textContent = "公开版";
+      $("corpusCount").textContent = "110";
+    }
+
+    async function runOcr() {
+      showToast("公开版不运行OCR；本地版可继续扩充语料");
+    }
+
+    function setOutput(text, items, growth, optimized) {
+      const output = $("output");
+      output.classList.remove("empty");
+      output.textContent = text;
+      const dims = [...new Set(items.map(x => x.dimension))];
+      $("outputTags").innerHTML = [
+        ...dims.map(x => `<span class="pill">${x}</span>`),
+        ...growth.slice(0, 4).map(x => `<span class="pill">${x}</span>`),
+        optimized ? `<span class="pill">已优化</span>` : ""
+      ].join("");
+    }
+
+    function getOutputText() {
+      const output = $("output");
+      return output.classList.contains("empty") ? "" : output.textContent.trim();
+    }
+
+    function clearAll() {
+      document.querySelectorAll("aside input[type='checkbox']").forEach(el => el.checked = false);
+      $("studentName").value = "";
+      $("gender").value = "";
+      $("notes").value = "";
+      $("output").classList.add("empty");
+      $("output").textContent = "请先在左侧填写学生信息并勾选五育表现，然后点击“生成评语”。";
+      $("outputTags").innerHTML = "";
+    }
+
+    function groupBy(list, key) {
+      return list.reduce((acc, item) => {
+        const value = item[key];
+        acc[value] = acc[value] || [];
+        acc[value].push(item);
+        return acc;
+      }, {});
+    }
+
+    async function copyText(text) {
+      if (!text) {
+        showToast("暂无内容可复制");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (error) {
+        const temp = document.createElement("textarea");
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        temp.remove();
+      }
+      showToast("已复制到剪贴板");
+    }
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => toast.classList.remove("show"), 1700);
+    }
+
+    init();
+  </script>
+</body>
+</html>
