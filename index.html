@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>班主任评语助手 v2</title>
+  <title>班主任评语助手</title>
   <script src="assets/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -521,8 +521,8 @@
       <div class="brand">
         <div class="mark">评</div>
         <div>
-          <h1>班主任评语助手 v2</h1>
-          <p class="sub">接入AI 提示词优化，支持性别、学段、性格画像、问题类型和五育融合筛选。</p>
+          <h1>班主任评语助手</h1>
+          <p class="sub">公开版不接入真实 AI 接口，支持性别、学段、性格画像、问题类型和五育融合筛选。</p>
         </div>
       </div>
 
@@ -626,13 +626,13 @@
     <main>
       <div class="hero">
         <div>
-          <h2>把学生画像、五育表现和AI 提示词优化整合成一段可直接使用的期末评语。</h2>
-          <p class="sub">第二版新增真实 AI 接口、性别/学段/性格/问题筛选，以及图片型资料 OCR 扩充语料入口。</p>
+          <h2>把学生画像、五育表现和提示词整理成一段可直接使用的期末评语。</h2>
+          <p class="sub">公开版只做本地生成、本地润色和提示词复制，不调用真实 AI 接口，也不会消耗 API 额度。</p>
         </div>
         <div class="stats">
           <div class="stat"><strong id="corpusCount">110</strong><span>条语料可继续扩充</span></div>
           <div class="stat"><strong>5</strong><span>个学生发展维度</span></div>
-          <div class="stat"><strong id="aiStatus">检测中</strong><span>AI 接口状态</span></div>
+          <div class="stat"><strong id="aiStatus">检测中</strong><span>公开版状态</span></div>
         </div>
       </div>
 
@@ -642,8 +642,8 @@
             <h3>生成结果</h3>
             <div class="toolbar">
               <button class="mini-btn" id="copyBtn">复制评语</button>
-              <button class="mini-btn" id="aiGenerateBtn">AI生成</button>
-              <button class="mini-btn" id="optimizeBtn">AI优化</button>
+              <button class="mini-btn" id="aiGenerateBtn">复制提示词</button>
+              <button class="mini-btn" id="optimizeBtn">本地润色</button>
               <button class="mini-btn" id="shortenBtn">压缩成短评</button>
               <button class="mini-btn" id="ocrBtn">OCR扩充</button>
               <button class="mini-btn" id="promptBtn">复制AI提示词</button>
@@ -670,8 +670,8 @@
                 <p>菜单按学生发展质量的五个方面组织：品德发展、学业发展、身心发展、审美素养、劳动与社会实践。</p>
               </div>
               <div class="source-item">
-                <b>AI 提示词优化</b>
-                <p>公开版不保存也不上传 API Key；可先本地生成，再复制 AI 提示词到你常用的大模型中优化。</p>
+                <b>提示词优化</b>
+                <p>公开版不保存、不上传、不读取 API Key；可先本地生成，再复制提示词到老师自己的 AI 工具中优化。</p>
               </div>
               <div class="source-item">
                 <b>OCR 扩充语料</b>
@@ -687,7 +687,6 @@
   <div class="toast" id="toast">已复制</div>
 
   <script>
-    const API_BASE = location.origin;
     const PUBLIC_STATIC_MODE = true;
 
     const growthModes = [
@@ -1165,7 +1164,8 @@
 
     async function aiGenerate() {
       generate();
-      showToast("公开版已用本地规则生成；需要真AI时请复制AI提示词");
+      copyPrompt();
+      showToast("公开版不会调用真实AI，已复制提示词");
     }
 
     async function optimize() {
@@ -1231,34 +1231,6 @@
 当前评语：
 ${getOutputText() || "暂无，请根据以上信息直接生成。"}`;
       copyText(prompt);
-    }
-
-    function payloadForAI() {
-      const p = profile();
-      return {
-        studentName: p.rawName,
-        pronoun: p.pronoun,
-        gender: p.gender,
-        grade: p.grade,
-        tone: p.tone,
-        personalities: p.personalities,
-        problems: p.problems,
-        growth: selectedGrowth(),
-        notes: p.notes,
-        items: selectedItems().map(x => ({ dimension: x.dimension, focus: x.focus, label: x.label, sentence: x.sentence })),
-        comment: getOutputText()
-      };
-    }
-
-    async function postJSON(path, payload) {
-      const res = await fetch(API_BASE + path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || res.statusText);
-      return data;
     }
 
     async function refreshStatus() {
